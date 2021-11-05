@@ -9,7 +9,7 @@ class Scenario(BaseScenario):
     def make_world(self, N=3):
         world = World()
         # set any world properties first
-        world.dim_c = 2
+        world.dim_c = 0
         num_agents = N
         num_landmarks = N
         world.collaborative = True
@@ -102,11 +102,14 @@ class Scenario(BaseScenario):
         # communication of all other agents
         comm = []
         other_pos = []
+        other_vel = []
         for other in world.agents:
             if other is agent:
                 continue
             comm.append(other.state.c)
             other_pos.append(other.state.p_pos - agent.state.p_pos)
+            other_vel.append(other.state.p_vel - agent.state.p_vel)
+        
         return np.concatenate(
-            [agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + comm
+            [agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + other_vel + comm
         )
