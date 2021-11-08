@@ -1,4 +1,5 @@
 import supersuit as ss
+from supersuit.vector.sb3_vector_wrapper import SB3VecEnvWrapper
 
 
 def wrap_parallel_env(parallel_env, num_envs=1):
@@ -8,7 +9,7 @@ def wrap_parallel_env(parallel_env, num_envs=1):
     return env
 
 
-def benchmark_random_agent(env, N=200):
+def benchmark_random_agent(env: SB3VecEnvWrapper, N=200):
 
     all_rewards = []
     for ep_id in range(N):
@@ -16,7 +17,7 @@ def benchmark_random_agent(env, N=200):
         total_reward = 0
         obs = env.reset()
         while True:
-            action = [env.action_space.sample()]
+            action = [env.action_space.sample() for _ in range(env.num_envs)]
             obs, rewards, dones, info = env.step(action)
 
             total_reward += rewards.sum()
