@@ -135,7 +135,7 @@ def test(
         total_reward = 0
         obs = env.reset()
         while True:
-            action, _states = model.predict(obs)
+            action, _states = model.predict(obs, deterministic=True)
             obs, rewards, dones, info = env.step(action)
 
             if render:
