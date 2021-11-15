@@ -1,5 +1,4 @@
 import pathlib
-from pettingzoo.mpe import simple_v2, simple_spread_v2
 import time
 import os
 import typing as T
@@ -12,64 +11,7 @@ from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.policies import ActorCriticPolicy
 from supersuit.vector.sb3_vector_wrapper import SB3VecEnvWrapper
 
-from experiments.utils import wrap_parallel_env
 
-
-class CustomPolicy(ActorCriticPolicy):
-    def __init__(
-        self,
-        observation_space: gym.Space,
-        action_space: gym.Space,
-        lr_schedule,
-        num_agents=1,
-        **kwargs,
-    ):
-        super().__init__(observation_space, action_space, lr_schedule, **kwargs)
-        self.num_agents = num_agents
-
-    def forward(
-        self, obs: th.Tensor, deterministic: bool = False
-    ) -> T.Tuple[th.Tensor, th.Tensor, th.Tensor]:
-
-        landmarks = obs[:, 4 : self.num_agents * 2 + 4]
-        landmarks = landmarks.reshape((obs.shape[0], self.num_agents, 2))
-
-        for ind in range(len(landmarks)):
-            perm = th.randperm(self.num_agents)
-            landmarks[ind, :] = landmarks[ind, perm, :]
-
-        shuffled_landmarks = landmarks.reshape((obs.shape[0], self.num_agents * 2))
-        obs = th.cat(
-            [obs[:, :4], shuffled_landmarks, obs[:, self.num_agents * 2 + 4 :]], dim=-1
-        )
-        return super().forward(obs, deterministic=deterministic)
-
-
-def create_simple_envs(
-    train_episode_length, test_episode_length, num_training_envs
-) -> T.Tuple[SB3VecEnvWrapper, SB3VecEnvWrapper]:
-    env = simple_v2.parallel_env(max_cycles=train_episode_length)
-    env = wrap_parallel_env(env, num_envs=num_training_envs)
-
-    eval_env = simple_v2.parallel_env(max_cycles=test_episode_length)
-    eval_env = wrap_parallel_env(eval_env, num_envs=1)
-    return env, eval_env
-
-
-def create_simple_spread_envs(
-    train_episode_length, test_episode_length, num_training_envs, N=1
-) -> T.Tuple[SB3VecEnvWrapper, SB3VecEnvWrapper]:
-    """Create and wrap a simple spread environment.
-
-    Args:
-        N: number of agents in the simple spread env
-    """
-    env = simple_spread_v2.parallel_env(N=N, max_cycles=train_episode_length)
-    env = wrap_parallel_env(env, num_envs=num_training_envs)
-
-    eval_env = simple_spread_v2.parallel_env(N=N, max_cycles=test_episode_length)
-    eval_env = wrap_parallel_env(eval_env, num_envs=1)
-    return env, eval_env
 
 
 def train(
@@ -78,7 +20,7 @@ def train(
     eval_callback_kwargs: T.Dict[str, T.Any],
     timesteps: int,
 ):
-    """Train a given configuratio
+    """Train a given configuration
 
     Args:
         experiment_name: name of the experiment
@@ -96,6 +38,7 @@ def train(
         best_model_save_path=log_dir,
         log_path=log_dir,
     )
+    ppo_kwargs.update(tensorboard_log=log_dir)
 
     # create model and callback
     model = PPO(**ppo_kwargs)
