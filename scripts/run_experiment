@@ -2,7 +2,6 @@
 import experiments.config_parser
 import click
 import yaml
-import shutil
 
 @click.command()
 @click.argument('config_paths', type=click.File('r'), nargs=-1)
@@ -12,12 +11,13 @@ def run_experiment(config_paths):
 
         print("="*10 + f"Starting experiment for config: {config_path.name}" + "="*10)
         config = yaml.load(config_path, yaml.Loader)
-        train, test = experiments.config_parser.ppo_config_parser(config)
+        train, test, raw_config = experiments.config_parser.ppo_config_parser(config, config_path.name)
 
         model, save_path = train()
         total_rewards = test(model)
 
-        shutil.copy(config_path.name, f"{save_path}_{config_path.name}")
+        with open(f"{save_path}_config.yaml", "w") as f:
+            yaml.dump(raw_config, f)
 
         print(f"Mean rewards: {sum(total_rewards)/len(total_rewards)}")
 

@@ -37,4 +37,4 @@ def test_ppo_parser():
         }
     }
 
-    ppo_config_parser(config)
+    ppo_config_parser(config, "")
