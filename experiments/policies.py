@@ -5,6 +5,7 @@ import torch
 
 from stable_baselines3.common.policies import ActorCriticPolicy
 
+
 class ShufflePolicy(ActorCriticPolicy):
     def __init__(
         self,
@@ -29,8 +30,31 @@ class ShufflePolicy(ActorCriticPolicy):
             landmarks[ind, :] = landmarks[ind, perm, :]
 
         shuffled_landmarks = landmarks.reshape((obs.shape[0], self.num_agents * 2))
+
+        other_agents = obs[
+            :,
+            4
+            + self.num_agents * 2 : 4
+            + self.num_agents * 2
+            + (self.num_agents - 1) * 2,
+        ]
+        other_agents = other_agents.reshape((obs.shape[0], self.num_agents - 1, 2))
+
+        for ind in range(len(other_agents)):
+            perm = torch.randperm(self.num_agents - 1)
+            other_agents[ind, :] = other_agents[ind, perm, :]
+
+        shuffled_neighbours = other_agents.reshape(
+            (obs.shape[0], (self.num_agents - 1) * 2)
+        )
+
         obs = torch.cat(
-            [obs[:, :4], shuffled_landmarks, obs[:, self.num_agents * 2 + 4 :]], dim=-1
+            [
+                obs[:, :4],
+                shuffled_landmarks,
+                shuffled_neighbours,
+                obs[:, self.num_agents * 2 + (self.num_agents - 1) * 2 + 4 :],
+            ],
+            dim=-1,
         )
         return super().forward(obs, deterministic=deterministic)
-
